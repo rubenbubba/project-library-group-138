@@ -1,60 +1,52 @@
 package be.ucll.model;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+
+@Entity
+@Table(name = "users")
 public class User {
+
+    /* ---------- fields ---------- */
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank(message = "Name is required.")
     private String name;
+
+    @Size(min = 8, message = "Password must be at least 8 characters long.")
     private String password;
+
+    @Email(message = "E-mail must be a valid email format.")
     private String email;
+
+    @Min(value = 0)  @Max(value = 101)
     private int age;
 
+    /* ---------- relations ---------- */
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "profile_id")
+    private Profile profile;
 
-    public User(String name, String password, String email, int age) {
-        setName(name);
-        setPassword(password);
-        setEmail(email);
-        setAge(age);
-    }
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Membership membership;
 
+    /* ---------- ctor ---------- */
+    protected User() { }
 
-    /***  GETTERS  ***/
-    public String getName() {
-        return this.name;
-    }
-    public String getPassword() {
-        return this.password;
-    }
-    public String getEmail() {
-        return this.email;
-    }
-    public int getAge() {
-        return this.age;
+    public User(String name,int age,String email,String password) {
+        setName(name); setAge(age); setEmail(email); setPassword(password);
     }
 
+    /* ---------- setters with basic validation ---------- */
+    public void setName(String name)       { this.name = name; }
+    public void setPassword(String pw)     { this.password = pw; }
+    public void setEmail(String email)     { this.email = email; }
+    public void setAge(int age)            { this.age = age; }
 
-
-    /***  SETTERS  ***/
-    public void setName(String name) {
-        if(name == null || name.trim().isEmpty()){
-            throw new RuntimeException("Name is required.");
-        }
-        this.name = name;
-    }
-    public void setPassword(String password) {
-        if(password == null || password.trim().length() < 8) {
-            throw new RuntimeException("Password must be at least 8 characters long.");
-        }
-        this.password = password;
-    }
-    public void setEmail(String email) {
-        // https://stackoverflow.com/a/5955780
-        if(email == null || !email.contains("@") || !email.contains(".")) {
-            throw new RuntimeException("E-mail must be a valid email format.");
-        }
-        this.email = email;
-    }
-    public void setAge(int age) {
-        if (age < 0 || age > 101) {
-            throw new RuntimeException("Age must be a positive integer between 0 and 101.");
-        }
-        this.age = age;
-    }
+    /* ---------- getters ---------- */
+    public String getName() { return name; }
+    public String getEmail() { return email; }
+    public int    getAge() { return age; }
+    public Membership getMembership() { return membership; }
 }
