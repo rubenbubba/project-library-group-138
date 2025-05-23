@@ -2,49 +2,58 @@ package be.ucll.service;
 
 import be.ucll.model.User;
 import be.ucll.repository.UserRepository;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * Facade for all user-related business logic.
- */
 @Service
+@Transactional
 public class UserService {
 
     private final UserRepository repo;
 
-    public UserService(UserRepository repo) {
-        this.repo = repo;
+    public UserService(UserRepository repo) { this.repo = repo; }
+
+    /* ---------- queries ---------- */
+    public List<User> getAllUsers()             { return repo.findAll(); }
+    public List<User> filterByName(String s)    { return repo.findByNameContainingIgnoreCase(s); }
+    public List<User> getAdults()               { return repo.findByAgeGreaterThanEqual(18); }
+    public List<User> getUsersInAgeRange(int a, int b) {
+        if (a > b) throw new RuntimeException("Min age > max age");
+        return repo.findByAgeGreaterThanEqualAndAgeLessThanEqual(a, b);
+    }
+    public User getOldestUser()                 { return repo.findFirstByOrderByAgeDesc(); }
+    public List<User> findByInterest(String i)  { return repo.findByProfile_InterestsContainingIgnoreCase(i); }
+
+    public List<User> olderThanWithInterestSorted(int minAge, String interest) {
+        return repo.findByAgeGreaterThanEqualAndProfile_InterestsContainingIgnoreCaseOrderByProfile_LocationAsc(
+                minAge, interest);
     }
 
-    /* ---------- Queries ---------- */
-
-    public List<User> getAll()              { return repo.findAll(); }
-
-    public User findByEmail(String email) {
-        return repo.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
-    }
-
-    public boolean exists(String email) { return repo.findByEmailIgnoreCase(email).isPresent(); }
-
-    /* ---------- Commands ---------- */
-
-    @Transactional
-    public User add(User u) {
-        if (exists(u.getEmail())) throw new IllegalStateException("User already exists");
+    /* ---------- CRUD ---------- */
+    public User addUser(@Valid User u) {
+        if (repo.findByEmail(u.getEmail()).isPresent())
+            throw new RuntimeException("User already exists");
         return repo.save(u);
     }
 
-    @Transactional
-    public User save(User u) {                       // used by MembershipService etc.
-        return repo.save(u);
+    public User updateUser(String email, @Valid User updated) {
+        User existing = repo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!existing.getEmail().equals(updated.getEmail()))
+            throw new RuntimeException("Email cannot be changed");
+
+        /* simple field updates */
+        existing.setProfile(updated.getProfile());   // deep copy would be nicer
+        existing.setMembership(updated.getMembership());
+        return repo.save(existing);
     }
 
-    @Transactional
-    public void delete(String email) {
-        repo.delete(findByEmail(email));
+    public void deleteUser(String email) {
+        User user = repo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        repo.delete(user);
     }
 }

@@ -2,19 +2,30 @@ package be.ucll.dto;
 
 import java.time.LocalDateTime;
 
-/** JSON body for error responses */
+/**
+ * Unified JSON payload for every error the API returns.
+ */
 public class ErrorResponse {
 
-    private final String error;
-    private final String message;
-    private final LocalDateTime timestamp = LocalDateTime.now();
+    /* --- fields serialised by Jackson ----------------------------------- */
 
-    public ErrorResponse(String error, String message) {
-        this.error = error;
+    private final LocalDateTime timestamp = LocalDateTime.now();
+    private final String  error;
+    private final String  message;
+    private final String  path;
+
+    /* --- ctor ------------------------------------------------------------ */
+
+    public ErrorResponse(String error, String message, String path) {
+        this.error   = error;
         this.message = message;
+        this.path    = path;
     }
 
-    public String getError()     { return error; }
-    public String getMessage()   { return message; }
+    /* --- getters --------------------------------------------------------- */
+
     public LocalDateTime getTimestamp() { return timestamp; }
+    public String        getError()     { return error;     }
+    public String        getMessage()   { return message;   }
+    public String        getPath()      { return path;      }
 }

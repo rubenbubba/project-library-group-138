@@ -1,7 +1,6 @@
 package be.ucll.unit;
 
 import be.ucll.repository.LoanRepository;
-import be.ucll.service.LoanService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

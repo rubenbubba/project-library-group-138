@@ -1,49 +1,47 @@
 package be.ucll.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
-import java.time.LocalDate;
 
 @Entity
+@Table(name = "publication")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "dtype")          // Book or Magazine
+@DiscriminatorColumn(name = "dtype")
 public abstract class Publication {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Title is required.")
+    @NotBlank
     private String title;
 
-    @Positive(message = "Publication year must be a positive integer.")
-    @Column(name = "publication_year")
+    @Min(1)
     private int publicationYear;
 
-    @Positive(message = "Number of copies must be a positive integer.")
-    @Column(name = "number_of_copies")
+    @Min(0)
     private int numberOfCopies;
 
-    protected Publication() {}
+    /* ---------- ctors ---------- */
+    protected Publication() { }
 
     protected Publication(String title, int year, int copies) {
-        if (year > LocalDate.now().getYear())
-            throw new RuntimeException("Publication year cannot be in the future.");
         this.title = title;
         this.publicationYear = year;
-        this.numberOfCopies = copies;
+        this.numberOfCopies  = copies;
     }
 
-    /* getters */
+    /* ---------- getters ---------- */
     public Long   getId()             { return id; }
     public String getTitle()          { return title; }
     public int    getPublicationYear(){ return publicationYear; }
     public int    getNumberOfCopies() { return numberOfCopies; }
 
-    /* business */
-    public void lendPublication() {
-        if (numberOfCopies == 0) throw new RuntimeException("No copies available.");
-        numberOfCopies--;
+    /* ---------- helpers ---------- */
+    public void changeStock(int delta) {
+        this.numberOfCopies += delta;
+        if (numberOfCopies < 0)
+            throw new RuntimeException("Negative stock not allowed");
     }
-    public void returnPublication() { numberOfCopies++; }
 }

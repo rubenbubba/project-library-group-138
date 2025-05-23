@@ -2,18 +2,19 @@ package be.ucll.repository;
 
 import be.ucll.model.Publication;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-public interface PublicationRepository extends JpaRepository<Publication,Long> {
+/**
+ * Shared JPA repository for the single-table “publications” entity.
+ * <p>
+ * **Important :** Do <b>not</b> declare Book- or Magazine-specific columns
+ * here – those go in <code>BookRepository</code> / <code>MagazineRepository</code>.
+ */
+@Repository
+public interface PublicationRepository extends JpaRepository<Publication, Long> {
 
-    /* title filter */
-    List<Publication> findByTitleContainingIgnoreCase(String title);
-
-    /* discriminator handled by JPA, query by subclass type */
-    List<Publication> findByAuthorNotNull();      // books
-    List<Publication> findByEditorNotNull();      // magazines
-
-    /* copies filter */
-    List<Publication> findByNumberOfCopiesGreaterThanEqual(int min);
+    /* copies > minCopies */
+    List<Publication> findByNumberOfCopiesGreaterThan(int minCopies);
 }

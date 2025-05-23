@@ -1,45 +1,38 @@
-package be.ucll.exception;
+package be.ucll.controller.advice;
 
 import be.ucll.dto.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /* Functional or manual RuntimeExceptions */
+    /* ========== Functional / domain errors ============================== */
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
-        return build(ex.getMessage());
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleRuntime(RuntimeException ex, HttpServletRequest req) {
+        return new ErrorResponse("Functional error", ex.getMessage(), req.getRequestURI());
     }
 
-    /* Hibernate-Validator violations (Story 20) */
+    /* ========== @Valid body validation errors =========================== */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-        String msg = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .findFirst()
-                .map(err -> err.getDefaultMessage())
-                .orElse("Invalid input.");
-        return build(msg);
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleBodyValidation(MethodArgumentNotValidException ex,
+                                              HttpServletRequest req) {
+        String msg = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> fe.getDefaultMessage())
+                .findFirst().orElse("Validation failed");
+        return new ErrorResponse("Validation failed", msg, req.getRequestURI());
     }
 
-    /* Jackson / JSON binding failures */
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException ex) {
-        // Most useful info is in deepest cause
-        String msg = ex.getMostSpecificCause().getMessage();
-        return build(msg);
-    }
-
-    /* helper */
-    private ResponseEntity<ErrorResponse> build(String msg) {
-        return new ResponseEntity<>(
-                new ErrorResponse("Validation failed", msg),
-                HttpStatus.BAD_REQUEST);
+    /* ========== Path‐/query-param validation errors ===================== */
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleConstraint(ConstraintViolationException ex,
+                                          HttpServletRequest req) {
+        return new ErrorResponse("Validation failed", ex.getMessage(), req.getRequestURI());
     }
 }

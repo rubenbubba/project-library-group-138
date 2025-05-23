@@ -2,54 +2,44 @@ package be.ucll.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 
 @Entity
+@Table(name = "loan")
 public class Loan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate borrowedDate;
-    private LocalDate returnedDate;
-    private double    price;          // € charged at return
-    private double    fine;           // late-return fine
+    private LocalDate loanDate;
+    private LocalDate returnDate;
+    private double    price;
 
-    /* ---------- relations ---------- */
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    /* relations */
+    @ManyToOne(optional = false)
     private Publication publication;
 
-    /* ---------- ctor ---------- */
+    @ManyToOne(optional = false)
+    private User user;
+
+    /* ---------- ctors ---------- */
     protected Loan() { }
 
-    public Loan(User user, Publication pub) {
-        this.user          = user;
-        this.publication   = pub;
-        this.borrowedDate  = LocalDate.now();
+    public Loan(LocalDate loanDate, Publication pub, User user, double price) {
+        this.loanDate   = loanDate;
+        this.publication = pub;
+        this.user        = user;
+        this.price       = price;
     }
 
-    /* ---------- domain behaviour ---------- */
-    public void registerReturn(double price, double fine) {
-        if (returnedDate != null) throw new RuntimeException("Loan already returned.");
-        this.returnedDate = LocalDate.now();
-        this.price        = price;
-        this.fine         = fine;
-    }
+    /* ---------- getters/setters ---------- */
+    public Long       getId()         { return id; }
+    public LocalDate  getLoanDate()   { return loanDate; }
+    public LocalDate  getReturnDate() { return returnDate; }
+    public double     getPrice()      { return price; }
+    public Publication getPublication(){ return publication; }
+    public User        getUser()      { return user; }
 
-    /* getters */
-    public Long getId() { return id; }
-    public LocalDate getBorrowedDate() { return borrowedDate; }
-    public LocalDate getReturnedDate() { return returnedDate; }
-    public double getPrice() { return price; }
-    public double getFine() { return fine; }
-
-    /* helpers */
-    public long daysKept() {
-        LocalDate end = (returnedDate == null ? LocalDate.now() : returnedDate);
-        return ChronoUnit.DAYS.between(borrowedDate, end);
-    }
+    public void setReturnDate(LocalDate d) { this.returnDate = d; }
+    public void setPrice(double p)         { this.price      = p; }
 }

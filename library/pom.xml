@@ -1,74 +1,108 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--  ╔════════════════════════════════════════════════════════════╗
+      ║  FULL POM.XML – drop straight into your project root      ║
+      ║  (same folder that contains src/, mvnw, etc.)             ║
+      ╚════════════════════════════════════════════════════════════╝ -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Your project coordinates -->
     <groupId>be.ucll</groupId>
     <artifactId>library</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <!-- Spring Boot parent takes care of dependency and plugin versions -->
+    <!-- Spring Boot parent controls dependency & plugin versions -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.2.4</version>
-        <relativePath/>
+        <relativePath/>       <!-- keep this -->
     </parent>
 
     <properties>
         <java.version>21</java.version>
+        <!-- keep tests reproducible -->
+        <maven.compiler.release>${java.version}</maven.compiler.release>
     </properties>
 
+    <!-- ────────────── Dependencies ────────────── -->
     <dependencies>
-        <!-- Web starter pulls in Spring MVC, JSON, Tomcat, etc. -->
+
+        <!-- Web: Spring MVC, JSON, embedded Tomcat -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Test starter pulls in JUnit 5 (API + Engine) and Spring Test utilities -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- Needed for WebTestClient inside integration tests -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-            <scope>test</scope>
-        </dependency>
+        <!-- Validation annotations (@NotBlank, @Email, …) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
+        <!-- Spring Data JPA + Hibernate -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
+        <!-- In-memory H2 database (only at runtime) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- Actuator endpoints (/actuator/health etc.) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-
+        <!-- ───── Test-only deps ───── -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- WebTestClient for integration tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
-
+    <!-- ────────────── Build plugins ────────────── -->
     <build>
         <plugins>
-            <!-- Boot plugin lets you run `mvn spring-boot:run` and creates executable JAR -->
+
+            <!-- Spring Boot plugin: lets us run and package easily -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <!-- OFFICIAL Maven Wrapper plugin (Apache)  -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-wrapper-plugin</artifactId>
+                <version>3.2.0</version>   <!-- tested, on Maven Central -->
+                <executions>
+                    <execution>
+                        <goals>
+                            <!-- generates mvnw & mvnw.cmd when you run:
+                                 mvn -N wrapper:wrapper
+                                                                -->
+                            <goal>wrapper</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 </project>

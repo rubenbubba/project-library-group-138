@@ -10,27 +10,26 @@ import java.time.LocalDate;
 @Component
 public class MembershipDbInitializer {
 
-    private final UserRepository userRepo;
-    private final MembershipRepository memRepo;
+    private final MembershipRepository memberships;
+    private final UserRepository       users;
 
-    public MembershipDbInitializer(UserRepository userRepo,
-                                   MembershipRepository memRepo) {
-        this.userRepo = userRepo; this.memRepo = memRepo;
+    public MembershipDbInitializer(MembershipRepository mRepo, UserRepository uRepo) {
+        this.memberships = mRepo;
+        this.users       = uRepo;
     }
 
     @PostConstruct
     public void seed() {
-        userRepo.findByEmailIgnoreCase("john@ucll.be").ifPresent(user -> {
-            if (user.getMembership() == null) {
-                Membership m = new Membership(
-                        LocalDate.now().minusDays(1),
-                        LocalDate.now().plusMonths(6),
-                        3);                                   // 3 free loans
-                m = memRepo.save(m);
-                m.getClass();            // keep Hibernate quiet
-                user.setMembership(m);
-                userRepo.save(user);
-            }
-        });
+
+        User user = users.findByEmail("john@ucll.be").orElse(null);
+        if (user == null) return;
+
+        Membership m = new Membership(LocalDate.now(),
+                LocalDate.now().plusYears(1),
+                5);
+        m.setUser(user);
+        user.setMembership(m);
+
+        memberships.save(m);
     }
 }

@@ -8,29 +8,25 @@ import org.springframework.stereotype.Component;
 @Component
 public class DbInitializer {
 
-    private final UserRepository userRepo;
+    private final UserRepository users;
 
-    public DbInitializer(UserRepository userRepo) {
-        this.userRepo = userRepo;
-    }
+    public DbInitializer(UserRepository users) { this.users = users; }
 
     @PostConstruct
-    public void populate() {
+    public void seed() {
 
-        // Alice – 25y, java interest, Leuven
-        User alice = new User("Alice","password123","alice@ucll.be",25);
-        alice.setProfile(new Profile("Leuven","hiking,java"));
-        userRepo.save(alice);
+        if (users.count() > 0) return;          // already seeded
 
-        // Bob – 15y, no profile
-        userRepo.save(new User("Bob","password123","bob@ucll.be",15));
+        User alice = new User("Alice", "alice@ucll.be", "alice1thtrh", 22);
+        alice.setProfile(new Profile("Reading,Travel", "Leuven"));
 
-        // Carl – 68y (oldest)
-        userRepo.save(new User("Carl","password123","carl@ucll.be",68));
+        User bob   = new User("Bob",   "bob@ucll.be",   "bob123htr4",   35);
 
-        // Dave – 40y, java interest, Antwerp
-        User dave = new User("Dave","password123","dave@ucll.be",40);
-        dave.setProfile(new Profile("Antwerp","java,cycling"));
-        userRepo.save(dave);
+        User dave  = new User("Dave",  "dave@ucll.be",  "dave12htrhr34",  45);
+        dave.setProfile(new Profile("Travel,Cycling", "Antwerp"));
+
+        users.save(alice);
+        users.save(bob);
+        users.save(dave);
     }
 }

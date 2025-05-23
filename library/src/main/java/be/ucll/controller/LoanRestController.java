@@ -2,40 +2,38 @@ package be.ucll.controller;
 
 import be.ucll.model.Loan;
 import be.ucll.service.LoanService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping
+@RequestMapping("/loans")
 public class LoanRestController {
 
-    private final LoanService service;
+    private final LoanService loans;
 
-    public LoanRestController(LoanService service) { this.service = service; }
+    public LoanRestController(LoanService loans) {
+        this.loans = loans;
+    }
 
-    /* --------------- create --------------- */
-    @PostMapping("/loans")
+    /* POST  /loans            body={ "email":"a@b.com", "publicationId": 1 } */
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Loan lend(@RequestParam String userEmail, @RequestParam long publicationId) {
-        return service.lend(userEmail, publicationId);
+    public Loan lend(@Valid @RequestBody Map<String, String> body) {
+        return loans.lend(body.get("email"), Long.parseLong(body.get("publicationId")));
     }
 
-    /* --------------- return --------------- */
-    @PutMapping("/loans/{id}/return")
-    public Loan returnLoan(@PathVariable long id) {
-        return service.returnLoan(id);
+    /* PUT   /loans/{id}/return  */
+    @PutMapping("/{id}/return")
+    public Loan close(@PathVariable Long id) {
+        return loans.returnLoan(id);
     }
 
-    /* --------------- by-user -------------- */
-    @GetMapping("/users/{email}/loans")
-    public List<Loan> byUser(@PathVariable String email) {
-        return service.loansForUser(email);
-    }
-
-    @DeleteMapping("/users/{email}/loans")
-    public void deleteForUser(@PathVariable String email) {
-        service.deleteLoansForUser(email);
+    /* GET   /loans/user/{email} */
+    @GetMapping("/user/{email}")
+    public java.util.List<Loan> byUser(@PathVariable String email) {
+        return loans.getLoansForUser(email);
     }
 }

@@ -7,46 +7,55 @@ import jakarta.validation.constraints.*;
 @Table(name = "users")
 public class User {
 
-    /* ---------- fields ---------- */
+    /* ---------- columns ---------- */
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank(message = "Name is required.")
     private String name;
 
+    @Email(message = "Email must be valid.")
+    @Column(unique = true, nullable = false)
+    private String email;
+
     @Size(min = 8, message = "Password must be at least 8 characters long.")
     private String password;
 
-    @Email(message = "E-mail must be a valid email format.")
-    private String email;
-
-    @Min(value = 0)  @Max(value = 101)
+    @Min(0) @Max(101)
     private int age;
 
-    /* ---------- relations ---------- */
+    /* profile (story 22) */
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "profile_id")
     private Profile profile;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    /* membership (story 27) */
+    @OneToOne(cascade = CascadeType.ALL)
     private Membership membership;
 
-    /* ---------- ctor ---------- */
-    protected User() { }
+    /* ---------- constructors ---------- */
+    protected User() {/* JPA */}
 
-    public User(String name,int age,String email,String password) {
-        setName(name); setAge(age); setEmail(email); setPassword(password);
+    public User(String name, String email, String password, int age) {
+        this.name     = name.trim();
+        this.email    = email.trim();
+        this.password = password;
+        this.age      = age;
     }
 
-    /* ---------- setters with basic validation ---------- */
-    public void setName(String name)       { this.name = name; }
-    public void setPassword(String pw)     { this.password = pw; }
-    public void setEmail(String email)     { this.email = email; }
-    public void setAge(int age)            { this.age = age; }
+    /* ---------- helpers ---------- */
+    public void setProfile(Profile p) {        // bidirectional link helper
+        this.profile = p;
+        p.setUser(this);
+    }
 
-    /* ---------- getters ---------- */
-    public String getName() { return name; }
-    public String getEmail() { return email; }
-    public int    getAge() { return age; }
-    public Membership getMembership() { return membership; }
+    public void setMembership(Membership m) {  // bidirectional link helper
+        this.membership = m;
+        m.setUser(this);
+    }
+
+    /* ---------- getters used by services ---------- */
+    public int        getAge()       { return age; }
+    public String     getEmail()     { return email; }
+    public Profile    getProfile()   { return profile; }
+    public Membership getMembership(){ return membership; }
 }

@@ -1,4 +1,4 @@
-package be.ucll.unit;
+package be.ucll.unit.service;
 
 import be.ucll.repository.PublicationRepository;
 import be.ucll.service.PublicationService;

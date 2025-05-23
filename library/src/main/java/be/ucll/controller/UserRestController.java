@@ -3,7 +3,7 @@ package be.ucll.controller;
 import be.ucll.model.User;
 import be.ucll.service.UserService;
 import jakarta.validation.Valid;
-import org.springframework.http.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,17 +12,15 @@ import java.util.List;
 @RequestMapping("/users")
 public class UserRestController {
 
-    private final UserService service;     // injected bean
+    private final UserService service;
 
-    public UserRestController(UserService service) {
-        this.service = service;
-    }
+    public UserRestController(UserService service) { this.service = service; }
 
-    /* ---------- GET ---------- */
-
+    /* ---------------- GET collection ---------------- */
     @GetMapping
-    public List<User> all(@RequestParam(required = false) String name) {
-        return (name == null) ? service.getAllUsers() : service.filterByName(name);
+    public List<User> getUsers(@RequestParam(required = false) String name) {
+        return name == null ? service.getAllUsers()
+                : service.filterByName(name);
     }
 
     @GetMapping("/adults")
@@ -36,30 +34,27 @@ public class UserRestController {
     @GetMapping("/oldest")
     public User oldest() { return service.getOldestUser(); }
 
-    /* --- NEW endpoints --- */
-
-    @GetMapping("/interests")
-    public List<User> byInterest(@RequestParam String interest) {
-        return service.findByInterest(interest);
+    @GetMapping("/interest/{tag}")
+    public List<User> byInterest(@PathVariable String tag) {
+        return service.findByInterest(tag);
     }
 
-    @GetMapping("/interests/location")
-    public List<User> interestAndAgeSorted(@RequestParam String interest,
-                                           @RequestParam int age) {
-        return service.olderThanWithInterestSorted(age, interest);
+    @GetMapping("/interest/{tag}/older-than/{age}")
+    public List<User> interestAndAge(@PathVariable String tag,
+                                     @PathVariable int age) {
+        return service.olderThanWithInterestSorted(age, tag);
     }
 
-    /* ---------- POST / PUT / DELETE ---------- */
-
+    /* ---------------- POST / PUT / DELETE ------------ */
     @PostMapping
-    public ResponseEntity<User> add(@Valid @RequestBody User user) {
-        return new ResponseEntity<>(service.addUser(user), HttpStatus.OK);
+    public ResponseEntity<User> add(@Valid @RequestBody User u) {
+        return ResponseEntity.ok(service.addUser(u));
     }
 
     @PutMapping("/{email}")
     public ResponseEntity<User> update(@PathVariable String email,
-                                       @Valid @RequestBody User changes) {
-        return new ResponseEntity<>(service.updateUser(email, changes), HttpStatus.OK);
+                                       @Valid @RequestBody User u) {
+        return ResponseEntity.ok(service.updateUser(email, u));
     }
 
     @DeleteMapping("/{email}")

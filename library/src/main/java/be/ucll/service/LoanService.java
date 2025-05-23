@@ -1,81 +1,84 @@
 package be.ucll.service;
 
 import be.ucll.model.*;
-import be.ucll.repository.*;
+import be.ucll.repository.LoanRepository;
+import be.ucll.repository.PublicationRepository;
+import be.ucll.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
 public class LoanService {
 
-    private final LoanRepository loanRepo;
-    private final PublicationRepository pubRepo;
-    private final UserRepository userRepo;
+    private static final double BASE_PRICE = 2.00;
+    private static final double LATE_FEE_PER_DAY = 0.50;     // after 30-day period
 
-    public LoanService(LoanRepository loanRepo,
-                       PublicationRepository pubRepo,
-                       UserRepository userRepo) {
-        this.loanRepo = loanRepo;
-        this.pubRepo  = pubRepo;
-        this.userRepo = userRepo;
+    private final LoanRepository        repo;
+    private final UserRepository        users;
+    private final PublicationRepository pubs;
+
+    public LoanService(LoanRepository repo,
+                       UserRepository users,
+                       PublicationRepository pubs) {
+        this.repo  = repo;
+        this.users = users;
+        this.pubs  = pubs;
     }
 
-    /* -----------------------------------------------------  create  */
-    @Transactional
-    public Loan lend(String userEmail, long publicationId) {
+    /* ---------------- create ---------------- */
 
-        User        user = userRepo.findByEmailIgnoreCase(userEmail)
+    @Transactional
+    public Loan lend(String email, Long pubId) {
+
+        User user = users.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Publication pub  = pubRepo.findById(publicationId)
+        Publication pub = pubs.findById(pubId)
                 .orElseThrow(() -> new RuntimeException("Publication not found"));
 
         if (pub.getNumberOfCopies() <= 0)
-            throw new RuntimeException("No copies available");
+            throw new RuntimeException("No stock left");
 
-        pub.changeStock(-1);                      // ↓ copies
-        Loan loan = loanRepo.save(new Loan(user, pub));
-        return loan;
-    }
+        double price = BASE_PRICE;
+        if (user.getMembership() != null &&
+                user.getMembership().isActive(LocalDate.now())) {
 
-    /* -----------------------------------------------------  return */
-    @Transactional
-    public Loan returnLoan(long loanId) {
-        Loan loan = loanRepo.findById(loanId)
-                .orElseThrow(() -> new RuntimeException("Loan not found"));
-        if (loan.getReturnedDate() != null)
-            throw new RuntimeException("Already returned");
-
-        Publication pub  = loan.getPublication();
-        User        user = loan.getUser();
-
-        // ------- price calculation ----------
-        double price = 2.0;          // default price
-
-        Membership m = user.getMembership();
-        if (m != null && m.isValidOn(LocalDate.now()) && m.hasFreeLoansLeft()) {
-            price = 0.0;
-            m.consumeFreeLoan();
+            int activeLoans = repo.countByUserAndReturnDateIsNull(user);
+            if (activeLoans < 2) price = 0.0;          // first two concurrent loans free
         }
 
-        // ------- fine calculation -----------
-        long overdue = loan.daysKept() - 14;
-        double fine  = overdue > 0 ? overdue * 0.5 : 0.0;
+        pub.changeStock(-1);
+        Loan loan = new Loan(LocalDate.now(), pub, user, price);
+        return repo.save(loan);
+    }
 
-        loan.registerReturn(price, fine);
-        pub.changeStock(+1);         // put copy back
+    /* ---------------- return ---------------- */
 
+    @Transactional
+    public Loan returnLoan(Long loanId) {
+        Loan loan = repo.findById(loanId)
+                .orElseThrow(() -> new RuntimeException("Loan not found"));
+        if (loan.getReturnDate() != null) return loan;        // already closed
+
+        loan.setReturnDate(LocalDate.now());
+        loan.getPublication().changeStock(+1);
+
+        long days = ChronoUnit.DAYS.between(loan.getLoanDate(), loan.getReturnDate());
+        if (days > 30) {
+            double extra = (days - 30) * LATE_FEE_PER_DAY;
+            loan.setPrice(loan.getPrice() + extra);
+        }
         return loan;
     }
 
-    /* -----------------------------------------------------  queries */
-    public List<Loan> loansForUser(String email) {
-        return loanRepo.findByUser_EmailIgnoreCase(email);
-    }
+    /* ---------------- queries ---------------- */
 
-    public void deleteLoansForUser(String email) {
-        loanRepo.deleteByUser_EmailIgnoreCase(email);
+    public List<Loan> getLoansForUser(String email) {
+        User user = users.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return repo.findByUser(user);
     }
 }

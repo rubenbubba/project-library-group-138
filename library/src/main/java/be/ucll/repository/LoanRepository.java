@@ -1,12 +1,15 @@
 package be.ucll.repository;
 
 import be.ucll.model.Loan;
+import be.ucll.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface LoanRepository extends JpaRepository<Loan,Long> {
+public interface LoanRepository extends JpaRepository<Loan, Long> {
 
-    List<Loan> findByUser_EmailIgnoreCase(String email);
-    void deleteByUser_EmailIgnoreCase(String email);
+    List<Loan> findByUser(User user);
+
+    /** helper used for the free-loan calculation */
+    int countByUserAndReturnDateIsNull(User user);
 }
