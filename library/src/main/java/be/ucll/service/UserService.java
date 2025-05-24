@@ -1,59 +1,76 @@
 package be.ucll.service;
 
-import be.ucll.model.User;
-import be.ucll.repository.UserRepository;
-import jakarta.validation.Valid;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import be.ucll.model.User;
+import be.ucll.repository.UserRepository;
 
 @Service
-@Transactional
 public class UserService {
 
     private final UserRepository repo;
 
-    public UserService(UserRepository repo) { this.repo = repo; }
-
-    /* ---------- queries ---------- */
-    public List<User> getAllUsers()             { return repo.findAll(); }
-    public List<User> filterByName(String s)    { return repo.findByNameContainingIgnoreCase(s); }
-    public List<User> getAdults()               { return repo.findByAgeGreaterThanEqual(18); }
-    public List<User> getUsersInAgeRange(int a, int b) {
-        if (a > b) throw new RuntimeException("Min age > max age");
-        return repo.findByAgeGreaterThanEqualAndAgeLessThanEqual(a, b);
+    public UserService(UserRepository repo) {
+        this.repo = repo;
     }
-    public User getOldestUser()                 { return repo.findFirstByOrderByAgeDesc(); }
-    public List<User> findByInterest(String i)  { return repo.findByProfile_InterestsContainingIgnoreCase(i); }
 
-    public List<User> olderThanWithInterestSorted(int minAge, String interest) {
+    public List<User> getAllUsers() {
+        return repo.findAll();
+    }
+
+    public List<User> filterByName(String nameSubstring) {
+        return repo.findByNameContainingIgnoreCase(nameSubstring);
+    }
+
+    public List<User> getAdults(int minAge) {
+        return repo.findByAgeGreaterThanEqual(minAge);
+    }
+
+    public List<User> getUsersInRange(int minAge, int maxAge) {
+        return repo.findByAgeGreaterThanEqualAndAgeLessThanEqual(minAge, maxAge);
+    }
+
+    public User getOldestUser() {
+        return repo.findFirstByOrderByAgeDesc();
+    }
+
+    public List<User> findByInterest(String interest) {
+        return repo.findByProfile_InterestsContainingIgnoreCase(interest);
+    }
+
+    public List<User> findByAgeAndInterestSorted(int minAge, String interest) {
         return repo.findByAgeGreaterThanEqualAndProfile_InterestsContainingIgnoreCaseOrderByProfile_LocationAsc(
                 minAge, interest);
     }
 
-    /* ---------- CRUD ---------- */
-    public User addUser(@Valid User u) {
-        if (repo.findByEmail(u.getEmail()).isPresent())
-            throw new RuntimeException("User already exists");
-        return repo.save(u);
+    @Transactional
+    public User addUser(User user) {
+        repo.findByEmailIgnoreCase(user.getEmail()).ifPresent(u ->
+        { throw new RuntimeException("User already exists: " + user.getEmail()); });
+        return repo.save(user);
     }
 
-    public User updateUser(String email, @Valid User updated) {
-        User existing = repo.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        if (!existing.getEmail().equals(updated.getEmail()))
+    @Transactional
+    public User updateUser(String email, User updated) {
+        User existing = repo.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("No user with email: " + email));
+        // ensure email cannot change
+        if (!existing.getEmail().equalsIgnoreCase(updated.getEmail())) {
             throw new RuntimeException("Email cannot be changed");
-
-        /* simple field updates */
-        existing.setProfile(updated.getProfile());   // deep copy would be nicer
-        existing.setMembership(updated.getMembership());
+        }
+        existing.setName(updated.getName());
+        existing.setAge(updated.getAge());
+        existing.setPassword(updated.getPassword());
         return repo.save(existing);
     }
 
+    @Transactional
     public void deleteUser(String email) {
-        User user = repo.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        repo.delete(user);
+        User existing = repo.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("No user with email: " + email));
+        repo.delete(existing);
     }
 }

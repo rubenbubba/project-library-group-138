@@ -1,56 +1,35 @@
 package be.ucll.service;
 
-import be.ucll.model.Membership;
-import be.ucll.repository.MembershipRepository;
-import org.springframework.stereotype.Service;
+import java.time.LocalDate;
 
-import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import be.ucll.model.Membership;
+import be.ucll.model.User;
+import be.ucll.repository.MembershipRepository;
+import be.ucll.repository.UserRepository;
 
 @Service
 public class MembershipService {
-    private final MembershipRepository membershipRepository;
 
-    public MembershipService(MembershipRepository membershipRepository) {
-        this.membershipRepository = membershipRepository;
+    private final UserRepository userRepo;
+    private final MembershipRepository membershipRepo;
+
+    public MembershipService(UserRepository userRepo,
+                             MembershipRepository membershipRepo) {
+        this.userRepo = userRepo;
+        this.membershipRepo = membershipRepo;
     }
 
-    /**
-     * Retrieve all memberships.
-     */
-    public List<Membership> getAllMemberships() {
-        return membershipRepository.findAll();
-    }
+    @Transactional
+    public Membership registerForUser(String email, Membership membershipRequest) {
+        User user = userRepo.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("No user found with email: " + email));
 
-    /**
-     * Create a new membership.
-     */
-    public Membership addMembership(Membership membership) {
-        return membershipRepository.save(membership);
-    }
-
-    /**
-     * Find a membership by its database id.
-     */
-    public Membership getMembershipById(Long id) {
-        return membershipRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Membership not found: " + id));
-    }
-
-    /**
-     * Update an existing membership.
-     */
-    public Membership updateMembership(Long id, Membership updated) {
-        Membership existing = getMembershipById(id);
-        existing.setStart(updated.getStart());
-        existing.setEnd(updated.getEnd());
-        existing.setFreeLoans(updated.getFreeLoans());
-        return membershipRepository.save(existing);
-    }
-
-    /**
-     * Delete a membership by id.
-     */
-    public void deleteMembership(Long id) {
-        membershipRepository.deleteById(id);
+        // Link to user
+        membershipRequest.setUser(user);
+        // Save & return
+        return membershipRepo.save(membershipRequest);
     }
 }

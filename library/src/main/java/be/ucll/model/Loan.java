@@ -1,45 +1,36 @@
 package be.ucll.model;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "loan")
 public class Loan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate loanDate;
-    private LocalDate returnDate;
-    private double    price;
+    private Long publicationId;
+    private LocalDate dueDate;
 
-    /* relations */
-    @ManyToOne(optional = false)
-    private Publication publication;
-
-    @ManyToOne(optional = false)
+    @ManyToOne
     private User user;
 
-    /* ---------- ctors ---------- */
-    protected Loan() { }
+    public Loan() {}  // <-- This must be public
 
-    public Loan(LocalDate loanDate, Publication pub, User user, double price) {
-        this.loanDate   = loanDate;
-        this.publication = pub;
-        this.user        = user;
-        this.price       = price;
+    // Getters and Setters
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    /* ---------- getters/setters ---------- */
-    public Long       getId()         { return id; }
-    public LocalDate  getLoanDate()   { return loanDate; }
-    public LocalDate  getReturnDate() { return returnDate; }
-    public double     getPrice()      { return price; }
-    public Publication getPublication(){ return publication; }
-    public User        getUser()      { return user; }
+    public void setPublicationId(Long publicationId) {
+        this.publicationId = publicationId;
+    }
 
-    public void setReturnDate(LocalDate d) { this.returnDate = d; }
-    public void setPrice(double p)         { this.price      = p; }
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    // Add getters if needed
 }

@@ -1,13 +1,17 @@
 package be.ucll.controller;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
 import be.ucll.model.Membership;
 import be.ucll.service.MembershipService;
+
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/memberships")
+@Validated
 public class MembershipRestController {
 
     private final MembershipService memberships;
@@ -16,11 +20,14 @@ public class MembershipRestController {
         this.memberships = memberships;
     }
 
-    /** POST /memberships/{email}  – assign / renew membership for a user */
     @PostMapping("/{email}")
-    @ResponseStatus(HttpStatus.CREATED)
-    public Membership register(@PathVariable String email,
-                               @Valid @RequestBody Membership body) {
-        return memberships.registerForUser(email, body);
+    public ResponseEntity<Membership> registerForUser(
+            @PathVariable String email,
+            @Valid @RequestBody Membership membership)
+    {
+        Membership created = memberships.registerForUser(email, membership);
+        return ResponseEntity.ok(created);
     }
+
+    // … other endpoints
 }

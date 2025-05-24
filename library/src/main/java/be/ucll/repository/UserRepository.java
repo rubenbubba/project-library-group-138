@@ -7,20 +7,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
-
-    /* single ---- */
-    Optional<User> findByEmail(String email);
-    User           findFirstByOrderByAgeDesc();               // oldest
-
-    /* filters ---- */
-    List<User> findByNameContainingIgnoreCase(String part);
-
-    List<User> findByAgeGreaterThanEqualAndAgeLessThanEqual(int min, int max);
-
-    List<User> findByAgeGreaterThanEqual(int minAge);
-
+    Optional<User> findByEmailIgnoreCase(String email);
+    List<User> findByNameContainingIgnoreCase(String name);
+    List<User> findByAgeGreaterThanEqual(int age);
+    List<User> findByAgeGreaterThanEqualAndAgeLessThanEqual(int minAge, int maxAge);
+    User findFirstByOrderByAgeDesc();
     List<User> findByProfile_InterestsContainingIgnoreCase(String interest);
-
-    List<User> findByAgeGreaterThanEqualAndProfile_InterestsContainingIgnoreCaseOrderByProfile_LocationAsc(
-            int minAge, String interest);
+    List<User> findByAgeGreaterThanEqualAndProfile_InterestsContainingIgnoreCaseOrderByProfile_LocationAsc(int age, String interest);
 }
